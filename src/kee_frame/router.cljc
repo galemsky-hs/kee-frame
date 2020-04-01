@@ -75,7 +75,7 @@
     (or (match-url routes url base-path)
         (route-match-not-found routes url))))
 
-(defn bootstrap-routes [routes router hash-routing? base-path scroll]
+(defn bootstrap-routes [routes router hash-routing? base-path navigator scroll]
   (let [initialized? (boolean @state/navigator)
         router (or router (->ReititRouter (reitit/router routes) hash-routing? base-path))]
     (reset! state/router router)
@@ -84,8 +84,9 @@
     (when-not initialized?
       (when scroll (scroll/start!))
       (reset! state/navigator
-              (interop/make-navigator {:nav-handler  (nav-handler router)
-                                       :path-exists? #(boolean (url->data router %))})))
+              (or navigator
+                  (interop/make-navigator {:nav-handler  (nav-handler router)
+                                           :path-exists? #(boolean (url->data router %))}))))
     (dispatch-current! @state/navigator)))
 
 (rf/reg-event-db :init (fn [db [_ initial]] (merge initial db)))
@@ -110,7 +111,7 @@
                                                  :dispatch [::scroll/poll route 0]}]})))))
 
 (defn start! [{:keys [routes initial-db router hash-routing? app-db-spec debug? root-component chain-links
-                      screen scroll debug-config base-path]
+                      screen scroll debug-config base-path navigator]
                :or   {debug? false
                       scroll true
                       base-path "/"}}]
@@ -127,7 +128,7 @@
                     {:routes routes
                      :router router})))
   (when (or routes router)
-    (bootstrap-routes routes router hash-routing? base-path scroll))
+    (bootstrap-routes routes router hash-routing? base-path navigator scroll))
 
   (when initial-db
     (rf/dispatch-sync [:init initial-db]))
