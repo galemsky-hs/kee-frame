@@ -23,6 +23,7 @@
   (data->url @state/router data))
 
 (defn goto [data]
+  (.log js/console "URL for" (pr-str data) "is" (url data))
   (navigate! @state/navigator (url data)))
 
 (defn nav-handler [router]
