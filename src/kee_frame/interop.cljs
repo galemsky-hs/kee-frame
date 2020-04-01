@@ -1,6 +1,5 @@
 (ns ^:no-doc kee-frame.interop
   (:require [kee-frame.api :as api]
-            [accountant.core :as accountant]
             [reagent.core :as reagent]
             [re-frame.core :as rf]
             [day8.re-frame.http-fx]
@@ -9,14 +8,11 @@
 
 (defrecord AccountantNavigator []
   api/Navigator
-  (dispatch-current! [_]
-    (accountant/dispatch-current!))
-  (navigate! [_ url]
-    (accountant/navigate! url)))
+  (dispatch-current! [_])
+  (navigate! [_ url]))
 
 (defn make-navigator
   [opts]
-  (accountant/configure-navigation! opts)
   (->AccountantNavigator))
 
 (defn render-root [root-component]

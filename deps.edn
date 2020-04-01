@@ -6,7 +6,6 @@
         metosin/reitit-core {:mvn/version "0.2.13"}
         day8.re-frame/http-fx {:mvn/version "0.1.6"}
         cljs-ajax {:mvn/version "0.8.0"}
-        venantius/accountant {:mvn/version "0.2.4"}
         org.clojure/core.match {:mvn/version "0.3.0-alpha5"}
         expound {:mvn/version "0.8.2"}
         day8.re-frame/test {:mvn/version "0.1.5"}
