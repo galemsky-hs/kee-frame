@@ -84,9 +84,8 @@
     (when-not initialized?
       (when scroll (scroll/start!))
       (reset! state/navigator
-              (or navigator
-                  (interop/make-navigator {:nav-handler  (nav-handler router)
-                                           :path-exists? #(boolean (url->data router %))}))))
+              ((or navigator interop/make-navigator) {:nav-handler  (nav-handler router)
+                                                      :path-exists? #(boolean (url->data router %))})))
     (dispatch-current! @state/navigator)))
 
 (rf/reg-event-db :init (fn [db [_ initial]] (merge initial db)))
