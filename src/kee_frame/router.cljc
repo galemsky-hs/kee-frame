@@ -50,31 +50,33 @@
                   {:url    url
                    :routes routes})))
 
-(defn match-data [routes route hash?]
+(defn match-data [routes route hash? base-path]
   (let [[_ path-params] route]
-    (str (when hash? "/#") (:path (apply reitit/match-by-name routes route))
+    (str (when hash? (str base-path "#")) (:path (apply reitit/match-by-name routes route))
          (when-some [q (:query-string path-params)] (str "?" q))
          (when-some [h (:hash path-params)] (str "#" h)))))
 
-(defn match-url [routes url]
-  (let [[path+query fragment] (-> url (str/replace #"^/#/" "/") (str/split #"#" 2))
+(defn match-url [routes url base-path]
+  (let [[path+query fragment] (-> url
+                                  (str/replace (re-pattern (str "^" base-path "/?#/")) "/")
+                                  (str/split #"#" 2))
         [path query] (str/split path+query #"\?" 2)]
     (some-> (reitit/match-by-path routes path)
             (assoc :query-string query :hash fragment))))
 
-(defrecord ReititRouter [routes hash?]
+(defrecord ReititRouter [routes hash? base-path]
   api/Router
   (data->url [_ data]
     (assert-route-data data)
-    (or (match-data routes data hash?)
+    (or (match-data routes data hash? base-path)
         (url-not-found routes data)))
   (url->data [_ url]
-    (or (match-url routes url)
+    (or (match-url routes url base-path)
         (route-match-not-found routes url))))
 
-(defn bootstrap-routes [routes router hash-routing? scroll]
+(defn bootstrap-routes [routes router hash-routing? base-path scroll]
   (let [initialized? (boolean @state/navigator)
-        router (or router (->ReititRouter (reitit/router routes) hash-routing?))]
+        router (or router (->ReititRouter (reitit/router routes) hash-routing? base-path))]
     (reset! state/router router)
     (rf/reg-fx :navigate-to goto)
 
@@ -107,9 +109,10 @@
                                                  :dispatch [::scroll/poll route 0]}]})))))
 
 (defn start! [{:keys [routes initial-db router hash-routing? app-db-spec debug? root-component chain-links
-                      screen scroll debug-config]
+                      screen scroll debug-config base-path]
                :or   {debug? false
-                      scroll true}}]
+                      scroll true
+                      base-path "/"}}]
   (interop/set-log-level! debug-config)
   (reset! state/app-db-spec app-db-spec)
   (reset! state/debug? debug?)
@@ -123,7 +126,7 @@
                     {:routes routes
                      :router router})))
   (when (or routes router)
-    (bootstrap-routes routes router hash-routing? scroll))
+    (bootstrap-routes routes router hash-routing? base-path scroll))
 
   (when initial-db
     (rf/dispatch-sync [:init initial-db]))
