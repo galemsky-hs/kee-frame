@@ -47,7 +47,7 @@
                    :data   data})))
 
 (defn route-match-not-found [routes url]
-  (throw (ex-info "No match for URL in routes"
+  (throw (ex-info (str "No match for URL '" url "' in routes")
                   {:url    url
                    :routes routes})))
 
