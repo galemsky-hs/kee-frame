@@ -75,9 +75,9 @@
     (or (match-url routes url base-path)
         (route-match-not-found routes url))))
 
-(defn bootstrap-routes [routes router hash-routing? base-path navigator scroll]
+(defn bootstrap-routes [routes routes-options router hash-routing? base-path navigator scroll]
   (let [initialized? (boolean @state/navigator)
-        router (or router (->ReititRouter (reitit/router routes) hash-routing? base-path))]
+        router (or router (->ReititRouter (reitit/router routes routes-options) hash-routing? base-path))]
     (reset! state/router router)
     (rf/reg-fx :navigate-to goto)
 
@@ -109,7 +109,7 @@
                               {:dispatch-later [{:ms       50
                                                  :dispatch [::scroll/poll route 0]}]})))))
 
-(defn start! [{:keys [routes initial-db router hash-routing? app-db-spec debug? root-component chain-links
+(defn start! [{:keys [routes routes-options initial-db router hash-routing? app-db-spec debug? root-component chain-links
                       screen scroll debug-config base-path navigator]
                :or   {debug? false
                       scroll true
@@ -127,7 +127,7 @@
                     {:routes routes
                      :router router})))
   (when (or routes router)
-    (bootstrap-routes routes router hash-routing? base-path navigator scroll))
+    (bootstrap-routes routes routes-options router hash-routing? base-path navigator scroll))
 
   (when initial-db
     (rf/dispatch-sync [:init initial-db]))
@@ -163,3 +163,5 @@
                         {:route          @route
                          :dispatch-value dispatch-value
                          :pairs          pairs}))))))
+
+

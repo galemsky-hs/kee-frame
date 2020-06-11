@@ -12,7 +12,7 @@
 ;; Interceptors used by all chains and events registered through kee-frame
 (def kee-frame-interceptors [i/add-global-interceptors (spec-interceptor state/app-db-spec) (debug-interceptor state/debug?) rf/trim-v])
 
-(def valid-option-key? #{:router :hash-routing? :routes :process-route :debug? :debug-config
+(def valid-option-key? #{:router :hash-routing? :routes :routes-options :process-route :debug? :debug-config
                          :chain-links :app-db-spec :root-component :initial-db
                          :screen :scroll :base-path :navigator})
 
