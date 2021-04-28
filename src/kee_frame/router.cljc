@@ -11,7 +11,9 @@
             [clojure.string :as str]
             [clojure.spec.alpha :as s]
             [kee-frame.spec :as spec]
-            [expound.alpha :as e]))
+            [expound.alpha :as e])
+  (:import goog.Uri
+           goog.Uri.QueryData))
 
 (def default-chain-links [{:effect-present? (fn [effects] (:http-xhrio effects))
                            :get-dispatch    (fn [effects] (get-in effects [:http-xhrio :on-success]))
@@ -57,13 +59,29 @@
          (when-some [q (:query-string path-params)] (str "?" q))
          (when-some [h (:hash path-params)] (str "#" h)))))
 
+(defn- query-param [^QueryData q k]
+  (let [vs (.getValues q k)]
+    (if (< (alength vs) 2)
+      (aget vs 0)
+      (vec vs))))
+
+(defn query-params
+  "Given goog.Uri, read query parameters into Clojure map."
+  [^Uri uri]
+  (let [q (.getQueryData uri)]
+    (->> q
+         (.getKeys)
+         (map (juxt keyword #(query-param q %)))
+         (into {}))))
+
 (defn match-url [routes url base-path]
-  (let [[path+query fragment] (-> url
-                                  (str/replace (re-pattern (str "^" base-path "/?#/")) "/")
-                                  (str/split #"#" 2))
-        [path query] (str/split path+query #"\?" 2)]
-    (some-> (reitit/match-by-path routes path)
-            (assoc :query-string query :hash fragment))))
+  (let [url (-> url (str/replace (re-pattern (str "^" base-path "/?#/")) "/"))
+        ;; [path query] (str/split path+query #"\?" 2)
+        uri (.parse goog.Uri url)
+        query-params (query-params uri)]
+    (some-> (reitit/match-by-path routes (.getPath uri))
+            (assoc :query-string query :hash (.getFragment uri)
+                   :query-params query-params))))
 
 (defrecord ReititRouter [routes hash? base-path]
   api/Router
@@ -163,5 +181,3 @@
                         {:route          @route
                          :dispatch-value dispatch-value
                          :pairs          pairs}))))))
-
-
