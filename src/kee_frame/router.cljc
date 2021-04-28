@@ -80,7 +80,7 @@
         uri (.parse goog.Uri url)
         query-params (query-params uri)]
     (some-> (reitit/match-by-path routes (.getPath uri))
-            (assoc :query-string query :hash (.getFragment uri)
+            (assoc :query-string (.getQuery uri) :hash (.getFragment uri)
                    :query-params query-params))))
 
 (defrecord ReititRouter [routes hash? base-path]
