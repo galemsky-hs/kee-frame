@@ -11,10 +11,10 @@
    [clojure.spec.alpha :as s]
    [expound.alpha :as e]))
 
-(defn process-params [params route]
+(defn process-params [params route ctx]
   (cond
     (vector? params) (get-in route params)
-    (ifn? params) (params route)))
+    (ifn? params) (params route ctx)))
 
 (defn validate-and-dispatch! [dispatch]
   (when dispatch
@@ -51,7 +51,7 @@
       (ifn? stop) (validate-and-dispatch! (stop ctx)))))
 
 (defn process-controller [id {:keys [last-params params start stop]} ctx route]
-  (let [current-params (process-params params route)]
+  (let [current-params (process-params params route ctx)]
     (match [last-params current-params (= last-params current-params)]
            [_ _ true] nil
            [nil _ false] (start! id ctx start current-params)
@@ -72,3 +72,6 @@
 
   (when-let [route @state/last-route-to-apply-to-controllers]
     (swap! state/controllers apply-route db route)))
+
+(defn run! [db route]
+  (swap! state/controllers apply-route db route))
