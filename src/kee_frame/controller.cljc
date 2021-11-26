@@ -20,6 +20,7 @@
   (when dispatch
     (if (map? dispatch)
       (rf/dispatch [::fsm/start dispatch])
+
       (do
         (when-not (s/valid? ::spec/event-vector dispatch)
           (e/expound ::spec/event-vector dispatch)
@@ -64,3 +65,10 @@
        (map (fn [[id controller]]
               [id (assoc controller :last-params (process-controller id controller ctx route))]))
        (into {})))
+
+
+(defn enable! [db]
+  (reset! state/controllers-enabled? true)
+
+  (when-let [route @state/last-route-to-apply-to-controllers]
+    (swap! state/controllers apply-route db route)))

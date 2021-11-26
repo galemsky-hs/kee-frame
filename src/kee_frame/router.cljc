@@ -121,7 +121,11 @@
                    (fn [{:keys [db] :as ctx} [_ route]]
                      (when scroll
                        (scroll/monitor-requests! route))
-                     (swap! state/controllers controller/apply-route ctx route)
+
+                     (if @state/controllers-enabled?
+                       (swap! state/controllers controller/apply-route ctx route)
+                       (reset! state/last-route-to-apply-to-controllers route))
+
                      (merge {:db (assoc db :kee-frame/route route)}
                             (when scroll
                               {:dispatch-later [{:ms       50
