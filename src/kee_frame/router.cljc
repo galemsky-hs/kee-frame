@@ -123,7 +123,7 @@
                        (scroll/monitor-requests! route))
 
                      (if @state/controllers-enabled?
-                       (swap! state/controllers controller/apply-route ctx route)
+                       (swap! state/controllers controller/apply-route db route)
                        (reset! state/last-route-to-apply-to-controllers route))
 
                      (merge {:db (assoc db :kee-frame/route route)}
