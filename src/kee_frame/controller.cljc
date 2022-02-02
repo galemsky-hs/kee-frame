@@ -67,11 +67,12 @@
        (into {})))
 
 
+(defn run! [db route]
+  (swap! state/controllers apply-route db route))
+
+
 (defn enable! [db]
   (reset! state/controllers-enabled? true)
 
-  (when-let [route @state/last-route-to-apply-to-controllers]
-    (swap! state/controllers apply-route db route)))
-
-(defn run! [db route]
-  (swap! state/controllers apply-route db route))
+  (let [route (:kee-frame/route db nil)]
+    (run! db route)))

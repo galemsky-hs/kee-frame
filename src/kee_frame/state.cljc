@@ -4,8 +4,6 @@
 
 (def controllers-enabled? (atom false))
 
-(def last-route-to-apply-to-controllers (atom nil))
-
 (def router (atom nil))
 
 (def navigator (atom nil))
@@ -25,6 +23,5 @@
   (reset! controllers {})
   (reset! fsm-interceptors {})
   (reset! router nil)
-  (reset! last-route-to-apply-to-controllers nil)
   (reset! controllers-enabled? false)
   (reset! navigator nil))

@@ -122,9 +122,8 @@
                      (when scroll
                        (scroll/monitor-requests! route))
 
-                     (if @state/controllers-enabled?
-                       (swap! state/controllers controller/apply-route db route)
-                       (reset! state/last-route-to-apply-to-controllers route))
+                     (when @state/controllers-enabled?
+                       (controller/run db route))
 
                      (merge {:db (assoc db :kee-frame/route route)}
                             (when scroll
