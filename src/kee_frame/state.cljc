@@ -3,6 +3,7 @@
 (def controllers (atom {}))
 
 (def controllers-enabled? (atom false))
+(def controllers-enabled-fn (atom nil))
 
 (def router (atom nil))
 

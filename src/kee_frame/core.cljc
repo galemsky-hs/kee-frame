@@ -14,7 +14,7 @@
 
 (def valid-option-key? #{:router :hash-routing? :routes :routes-options :process-route :debug? :debug-config
                          :chain-links :app-db-spec :root-component :initial-db
-                         :screen :scroll :base-path :navigator})
+                         :screen :scroll :base-path :navigator :controllers-enabled-fn})
 
 (defn extra-options
   "Complete listing of invalid options sent to the `start!` function."
@@ -46,6 +46,9 @@
   (let [extras (extra-options options)]
     (when (seq extras)
       (throw (ex-info (str "Uknown startup options. Valid keys are " valid-option-key?) extras))))
+
+
+  (reset! state/controllers-enabled-fn (:controllers-enabled-fn options))
   (router/start! options))
 
 (defn debug-enabled? []

@@ -68,8 +68,10 @@
 
 
 (defn run! [db route]
-  (swap! state/controllers apply-route db route))
+  (let [cefn @state/controllers-enabled-fn]
 
+    (when (or (nil? cefn) (cefn db route))
+      (swap! state/controllers apply-route db route))))
 
 (defn enable! [db]
   (reset! state/controllers-enabled? true)
