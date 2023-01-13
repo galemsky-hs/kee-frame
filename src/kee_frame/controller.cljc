@@ -91,8 +91,10 @@
   (fn [new-controllers]
     (swap! state/controllers update-controllers new-controllers)))
 
-;; TODO: where was it called??
-(defn enable! [db]
+(defn enable!
+  "Intended to be called externally
+  (When a page loads the user role and is ready to check their permissions and run controllers)."
+  [db]
   (reset! state/controllers-enabled? true)
 
   (let [route (:kee-frame/route db nil)]
