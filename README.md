@@ -8,10 +8,13 @@
 
 [![cljdoc badge](https://cljdoc.xyz/badge/kee-frame/kee-frame)](https://cljdoc.xyz/d/kee-frame/kee-frame/CURRENT)
 
+[![project chat](https://img.shields.io/badge/slack-join_chat-brightgreen.svg)](https://clojurians.slack.com/archives/CA7EJ0Y2U)
 
-## Project status (December 2019)
 
-The API and functionality of kee-frame is stable and proven to work. Pull requests are welcome.
+## Project status (August 2021)
+
+The API and functionality of kee-frame is stable and proven to work.
+Pull requests are welcome!
  
 ## Quick walkthrough
 - If you prefer, you can go straight to some [articles](http://ingesolvoll.github.io/tags/kee-frame/) or the [demo app](https://github.com/ingesolvoll/kee-frame-sample)
@@ -74,9 +77,10 @@ Call this function on figwheel reload.
 - Let the route data decide what view to display
 ```clojure
 (defn main-view []
-  [k/switch-route (fn [route] (:handler route))
+  [k/switch-route (fn [route] (-> route :data :name))
    :index [index-page] 
-   :orders [orders-page]])
+   :orders [orders-page]
+   nil [:div "Loading..."])
 ```
 
 ## Benefits of leaving the URL in charge
@@ -118,7 +122,7 @@ There are 2 simple options for bootstrapping your project:
 ### 1. Manual installation
 Add the following dependency to your `project.clj` file:
 ```clojure
-[kee-frame "0.3.4"]
+[kee-frame "1.2.0"]
 ```
 ### 2. Luminus template
 [Luminus](http://www.luminusweb.net) is a framework that makes it easy to get started with web app development
@@ -173,14 +177,21 @@ You can set the `hash-routing?` property to `true` for `/#/todos/1` style urls. 
 history without the hash. The hash bit should not be included in your route definition, kee-frame strips it off before matching
 the route.
 
+By default an unknown URL/route causes an error. You can provide a string URL under config key `:not-found` 
+as your default 404 when no route is found.
+
 If you provide `:root-component`, kee-frame will render that component in the DOM element with id "app". Make sure you have such an element in your index.html. You are free to do the initial rendering yourself if you want, just skip this setting. If you use this feature, make sure that `k/start!` is called every time figwheel reloads your code. 
 
-The `debug?` boolean option is for enabling debug interceptors on all your events, as well as traces from the activities of controllers. 
+The `:log` option accepts a timbre log configuration map. See the [Logging](#logging) section for more details.
 
-For further control of debug output, use the `debug-config` option. Valid boolean keys are `:routes?`, `events?`, `:controllers?` and `:overwrites?`. All default to true,
-except `:overwrites?`. That one also removes the re-frame warnings about overwriting subs and events, which many find annoying.
+The `debug?` and `debug-config` options were replaced by the `:log` option in 0.4.1. 
 
 If you provide an `app-db-spec`, the framework will let you know when a bug in your event handler is trying to corrupt your DB structure. This is incredibly useful, so you should put down the effort to spec up your db!
+
+You can override kee-frame's behaviour on route change through the `:route-change-event` option.
+Just specify the id of the event you want to use. One possible case is to perform some gatekeeping
+before executing the controllers for that route. If route execution is ok, 
+the event could dispatch to kee-frame's built in `:kee-frame.router/route-changed`.
 
 ## Controllers
 A controller is a connection between the route data and your event handlers. It is a map with two required keys (`params` and `start`), and one optional (`stop`).
@@ -209,11 +220,17 @@ For `start` and `stop` it's very common to ignore the parameters and just return
 ```
 
 ## Controller state transitions
-This rules of controller states are stolen entirely from Keechma. They are:
+This rules of controller states are stolen entirely from Keechma. 
+
+NOTE: `false` is not treated as falsy in controllers, it is considered as any other value. The explicitly negative value that stops controllers is `nil`.
+
+The controller rules are:
 * When previous and current parameter values are the same, do nothing
 * When previous parameter was nil and current is not nil, call `start`.
 * When previous parameter was not nil and current is nil, call `stop`.
 * When both previous and current are not nil, but different, call `stop`, then `start`.
+
+All controllers `:params` fns are called every time the route changes. Therefore `:params` should return `nil` for routes on which it should not be started.
 
 ## Event chains
 
@@ -282,67 +299,34 @@ It looks pretty much the same, only more concise. But it does help you with a fe
 * If you pass only a function reference to your reagent components (no surrounding []), kee-frame will invoke them with the route as the first parameter.
 * It will give you nice error messages when you make a mistake.
 
-## Finite State Machines (alpha since 0.4.0)
+## Finite State Machines
+The last year there has been several experiments in kee-frame for integrating FSMs. I have now reached a conclusion
+on this, and created [re-statecharts](https://github.com/ingesolvoll/re-statecharts). It is available in kee-frame
+through [glimt](https://github.com/ingesolvoll/glimt).
 
-#### FSM API is marked as alpha, as it is more likely to receive breaking changes for the coming months.
+If you have been using event chains to do your HTTP requests, glimt is clearly a better option. It handles more than
+just the happy path and gives you with the state of the request along the way. I highly recommend trying out FSMs in 
+your apps!
 
-Most people are not using state machines in their daily programming tasks. Or actually they are, it's just that the state machines are hidden
-inside normal code, incomplete and filled with fresh custom made bugs. A `{:loading true}` here, a missing `:on-failure` there. You may get
-it right eventually, but it's hard to read the distributed state logic and it is easy to mess it up later.
+## Logging
 
-A kee-frame event chain is a kind of state machine. But in the examples, it only handles the
-happy path of successful HTTP requests. It does not have a good answer to error handling, and you have to make custom solutions for displaying
-the state of an ongoing process (retrying, loading, sending, failed etc).
-
-Here's the structure of an FSM in kee-frame:
-
-```clojure
-(def my-http-request-fsm
-   {:id    :my-http-request
-    :start ::loading
-    :stop  ::loaded
-    :fsm   {::loading        {[::fsm/on-enter]      {:dispatch [[:contact-the-server]]}
-                              [:server-responded]   {:to ::loaded}
-                              [:default-on-failure] {:to ::loading-failed}}
-            ::loading-failed {[::fsm/after 10000]   {:to ::loading}}}})
-```
-
-The `:start` param (required) identifies the initial state of the FSM. 
-If you specify a `:stop` state, the machine will halt when it enters that state.
-
-The `:fsm` param is the interesting part. It's a map from states to available transitions. A transition key/value pair
-consists of a re-frame event and information about what happens to the FSM state when that event is seen.
-The actual event vector will usually contain more items, the FSM considers it a match if the event starts
-with the vector provided in the FSM.
-
-If an event is matched, the right-side map decides what happens next. It can transition into a new state,
-or dispatch re-frame events. Both are optional.
-
-There are 2 special "events" here:
-- `:kee-frame.fsm.alpha/after` triggers the specified number of ms after entering that state. Will not trigger if state has changed.
-- `:kee-frame.fsm.alpha/on-enter` triggers immediately when entering that state.
-
-FSMs can be started and stopped like this:
+https://github.com/ptaoussanis/timbre is included for logging. The `kee-frame.core/start!` function accepts an optional timbre config map. The default
+config logs to browser console at level `:info`. Here's an example config you could pass in:
 
 ```clojure
-(rf/dispatch [:kee-frame.fsm.alpha/start my-http-request-fsm])
-
-(rf/dispatch [:kee-frame.fsm.alpha/stop my-http-request-fsm])
+{:log {:level        :debug
+       :ns-blacklist ["kee-frame.event-logger"]}
+...
+}
 ```
 
-Controllers have been extended to support returning FSM maps instead of event vectors. Like this:
+Kee-frame uses debug logging as an aid in debugging applications. This means that turning on all logging
+will get quite noisy. You might want to include some of these namespaces in your blacklist if you don't need them:
+- `kee-frame.event-logger`
+- `kee-frame.fsm.alpha`
 
-```clojure      
-(defn league-fsm [id]
-  {:id :league-fsm
-   ....})
+IMPORTANT: For debug logging to show up in Chrome you need to enable "Verbose" logging in Chrome dev tools. See https://github.com/ptaoussanis/timbre/issues/249
 
-(k/reg-controller :league
-                  {:params (fn [route-data] ...)
-                   :start  (fn [ctx id] (league-fsm id)})
-```
-
-This FSM will be started and stopped by the controller start/stop lifecycle. See the demo app for extended examples.
 
 ## Introducing kee-frame into an existing app
 
@@ -428,14 +412,6 @@ The subscriptions available are:
 (rf/subscribe [:breaking-point.core/small-monitor?]) ;; true if window width is >= 992 and < 1200
 (rf/subscribe [:breaking-point.core/large-monitor?]) ;; true if window width is >= 1200
 ```
-## Websockets (removed since 0.4.0)
-
-I believe it was a mistake to introduce websockets into kee-frame. It's not what this library is
-about. The code has been put in a separate repo, and can be used as before. See docs at
-https://github.com/ingesolvoll/kee-frame-sockets
-
-If you are a user of the websocket code and you find that the new lib has bugs, 
-please downgrade to kee-frame 0.3.4 and submit an issue.
 
 ## Error messages
 

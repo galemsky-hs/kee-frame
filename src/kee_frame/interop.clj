@@ -22,7 +22,5 @@
 
 (defn set-breakpoints [_])
 
-(defn set-log-level! [_])
-
 (defn set-timeout [_ _])
 (defn clear-timeout [_])
