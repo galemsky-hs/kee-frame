@@ -98,4 +98,4 @@
   (reset! state/controllers-enabled? true)
 
   (let [route (:kee-frame/route db nil)]
-    (rf/dispatch [::route-changed route])))
+    (rf/dispatch [:kee-frame.router/route-changed route])))
