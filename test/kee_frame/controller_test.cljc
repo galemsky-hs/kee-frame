@@ -5,7 +5,8 @@
 (deftest compact-syntax
   (testing "Can start and stop"
     (let [controllers      [{:id     :my-controller
-                             :params #(-> % :handler (= :some-page) (or nil))
+                             :params (fn [route db]
+                                       (-> route :handler (= :some-page) (or nil)))
                              :start  [:start/event]
                              :stop   [:stop/event]}]
           {:keys [:update-controllers :dispatch-n]} (c/controller-effects controllers {} {:handler :some-page})

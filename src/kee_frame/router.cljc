@@ -85,11 +85,13 @@
             (into {}))))
    :clj
    (defn query-params
-     "Given goog.Uri, read query parameters into Clojure map."
      [query-string]
      (comment (query-params "param=123&arr=first&arr=second"))
+     (comment (query-params nil))
 
-     (->> (str/split query-string #"\&")
+     (->> (if query-string
+            (str/split query-string #"\&")
+            [])
           (map #(str/split % #"\=" 2))
           (group-by first)
           (reduce-kv (fn [acc k key-val-pairs]

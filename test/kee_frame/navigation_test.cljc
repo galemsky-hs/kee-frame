@@ -11,8 +11,11 @@
 (deftest can-navigate-through-events
   (testing "Good navigation"
     (state/reset-state!)
-    (k/reg-controller :test-controller {:params #(when (= (-> % :data :name) :some-route)
-                                                   (:path-params %))
+    (reset! state/controllers-enabled? true)
+
+    (k/reg-controller :test-controller {:params (fn [route db]
+                                                  (when (= (-> route :data :name) :some-route)
+                                                    (:path-params route)))
                                         :start  [::test-event-2]})
     (rf-test/run-test-sync
      (rf/reg-sub :test-prop (fn [db _] (:test-prop db)))
@@ -26,6 +29,7 @@
 
   (testing "Bad dispatch value returned form start fn throws exception"
     (state/reset-state!)
+    (reset! state/controllers-enabled? true)
     (k/reg-controller :test-controller {:params (constantly true)
                                         :start  (fn [_ _] "This is not cool")})
     (rf-test/run-test-sync

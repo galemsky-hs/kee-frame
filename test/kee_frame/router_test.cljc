@@ -4,7 +4,7 @@
             [kee-frame.api :as api]
             [reitit.core :as reitit]))
 
-(defn router [routes hash?] (router/->ReititRouter (reitit/router routes) hash? nil))
+(defn router [routes hash?] (router/->ReititRouter (reitit/router routes) hash? nil "/"))
 
 (deftest can-produce-hash-urls
   (let [r (router [["/" :root]
