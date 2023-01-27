@@ -1,22 +1,22 @@
 (ns ^:no-doc kee-frame.interop
   (:require [kee-frame.api :as api]
+            [accountant.core :as accountant]
             [reagent.dom :as reagent-dom]
             [re-frame.core :as rf]
             [day8.re-frame.http-fx]
             [breaking-point.core :as bp]
-            [accountant.core :as accountant]
             [re-frame.loggers :as rf.log]))
 
 (defrecord AccountantNavigator []
   api/Navigator
   (dispatch-current! [_]
-    #_(accountant/dispatch-current!))
+    (accountant/dispatch-current!))
   (navigate! [_ url]
-    #_(accountant/navigate! url)))
+    (accountant/navigate! url)))
 
 (defn make-navigator
   [opts]
-  #_(accountant/configure-navigation! opts)
+  (accountant/configure-navigation! opts)
   (->AccountantNavigator))
 
 (defn render-root [root-component]
@@ -24,7 +24,7 @@
     (if-let [app-element (.getElementById js/document "app")]
 
       (reagent-dom/render root-component
-                          app-element)
+                      app-element)
       (throw (ex-info "Could not find element with id 'app' to mount app into" {:component root-component})))))
 
 (defn breakpoints-or-defaults [breakpoints]
