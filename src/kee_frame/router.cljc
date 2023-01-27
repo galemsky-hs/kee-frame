@@ -139,9 +139,9 @@
         (when not-found (match-url routes not-found base-path))
         (route-match-not-found routes url))))
 
-(defn bootstrap-routes [{:keys [routes routes-options navigator router hash-routing? scroll route-change-event not-found]}]
+(defn bootstrap-routes [{:keys [routes base-path routes-options navigator router hash-routing? scroll route-change-event not-found]}]
   (let [initialized? (boolean @state/navigator)
-        router (or router (->ReititRouter (reitit/router routes routes-options) hash-routing? not-found  routes-options))]
+        router (or router (->ReititRouter (reitit/router routes routes-options) hash-routing? not-found base-path))]
     (reset! state/router router)
     (rf/reg-fx :navigate-to goto)
 
