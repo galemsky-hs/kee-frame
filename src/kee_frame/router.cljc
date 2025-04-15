@@ -163,10 +163,15 @@
 
       (let [controllers-enabled? (when @state/controllers-enabled?
                                    (if-let [f-enabled? @state/controllers-enabled-fn]
-                                     (f-enabled? db route)
+                                     (or (f-enabled? db route)
+                                       :only-bypass)
                                      true))
-            {:keys [update-controllers dispatch-n]} (when controllers-enabled?
-                                                      (controller/controller-effects @state/controllers ctx route))]
+            controllers-to-rerun (case controllers-enabled?
+                                   true @state/controllers
+                                   :only-bypass (filter :bypass-controllers-enabled-fn? @state/controllers)
+                                   [])
+            {:keys [update-controllers dispatch-n]} (when (not-empty controllers-to-rerun)
+                                                      (controller/controller-effects controllers-to-rerun ctx route))]
         (cond-> {:db             (assoc db :kee-frame/route route)
                  :dispatch-later [(when scroll
                                     {:ms       50
